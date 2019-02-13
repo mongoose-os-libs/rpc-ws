@@ -37,9 +37,6 @@ struct mg_rpc_channel_ws_data {
 
 static void mg_rpc_ws_handler(struct mg_connection *nc, int ev, void *ev_data,
                               void *user_data) {
-#if !MG_ENABLE_CALLBACK_USERDATA
-  void *user_data = nc->user_data;
-#endif
   struct mg_rpc_channel *ch = (struct mg_rpc_channel *) user_data;
   if (ch == NULL) {
     nc->flags |= MG_F_CLOSE_IMMEDIATELY;
@@ -50,9 +47,13 @@ static void mg_rpc_ws_handler(struct mg_connection *nc, int ev, void *ev_data,
   if (chd == NULL) return;
   switch (ev) {
     case MG_EV_WEBSOCKET_HANDSHAKE_DONE: {
-      LOG(LL_INFO, ("%p WS HANDSHAKE DONE", ch));
-      chd->is_open = true;
-      ch->ev_handler(ch, MG_RPC_CHANNEL_OPEN, NULL);
+      struct http_message *hm = (struct http_message *) ev_data;
+      LOG((hm->resp_code == 101 ? LL_INFO : LL_ERROR),
+          ("%p WS handshake resp %d", ch, hm->resp_code));
+      if (hm->resp_code == 101) {
+        chd->is_open = true;
+        ch->ev_handler(ch, MG_RPC_CHANNEL_OPEN, NULL);
+      }
       break;
     }
     case MG_EV_WEBSOCKET_FRAME: {
