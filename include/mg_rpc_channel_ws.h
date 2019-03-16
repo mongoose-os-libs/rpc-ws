@@ -32,8 +32,9 @@ struct mg_rpc_channel_ws_out_cfg {
   struct mg_str server_address;
   struct mg_str handshake_headers;
 #if MG_ENABLE_SSL
-  struct mg_str ssl_ca_file;
-  struct mg_str ssl_client_cert_file;
+  struct mg_str ssl_cert;
+  struct mg_str ssl_key;
+  struct mg_str ssl_ca_cert;
   struct mg_str ssl_server_name;
 #endif
   int reconnect_interval_min;

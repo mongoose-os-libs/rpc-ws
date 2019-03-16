@@ -29,12 +29,14 @@ static struct mg_rpc_channel *mgos_rpc_channel_ws_out_factory(
   memset(&chcfg, 0, sizeof(chcfg));
   chcfg.server_address = dst_uri;
 #if MG_ENABLE_SSL
-  if (mg_get_http_var(&fragment, "ssl_ca_file", val_buf, sizeof(val_buf)) > 0) {
-    chcfg.ssl_ca_file = mg_strdup(mg_mk_str(val_buf));
+  if (mg_get_http_var(&fragment, "ssl_cert", val_buf, sizeof(val_buf)) > 0) {
+    chcfg.ssl_cert = mg_strdup(mg_mk_str(val_buf));
   }
-  if (mg_get_http_var(&fragment, "ssl_client_cert_file", val_buf,
-                      sizeof(val_buf)) > 0) {
-    chcfg.ssl_client_cert_file = mg_strdup(mg_mk_str(val_buf));
+  if (mg_get_http_var(&fragment, "key", val_buf, sizeof(val_buf)) > 0) {
+    chcfg.ssl_key = mg_strdup(mg_mk_str(val_buf));
+  }
+  if (mg_get_http_var(&fragment, "ssl_ca_cert", val_buf, sizeof(val_buf)) > 0) {
+    chcfg.ssl_ca_cert = mg_strdup(mg_mk_str(val_buf));
   }
   if (mg_get_http_var(&fragment, "ssl_server_name", val_buf, sizeof(val_buf)) >
       0) {
@@ -66,9 +68,10 @@ static struct mg_rpc_channel *mgos_rpc_channel_ws_out_factory(
   struct mg_rpc_channel *ch = mg_rpc_channel_ws_out(mgos_get_mgr(), &chcfg);
 
 #if MG_ENABLE_SSL
-  free((void *) chcfg.ssl_ca_file.p);
-  free((void *) chcfg.ssl_client_cert_file.p);
-  free((void *) chcfg.ssl_server_name.p);
+  mg_strfree(&chcfg.ssl_cert);
+  mg_strfree(&chcfg.ssl_key);
+  mg_strfree(&chcfg.ssl_ca_cert);
+  mg_strfree(&chcfg.ssl_server_name);
 #endif
 
   (void) scheme;
@@ -82,8 +85,9 @@ static void mgos_rpc_channel_ws_out_cfg_from_sys(
   const struct mgos_config_rpc_ws *wscfg = &cfg->rpc.ws;
   chcfg->server_address = mg_mk_str(wscfg->server_address);
 #if MG_ENABLE_SSL
-  chcfg->ssl_ca_file = mg_mk_str(wscfg->ssl_ca_file);
-  chcfg->ssl_client_cert_file = mg_mk_str(wscfg->ssl_client_cert_file);
+  chcfg->ssl_cert = mg_mk_str(wscfg->ssl_cert);
+  chcfg->ssl_key = mg_mk_str(wscfg->ssl_key);
+  chcfg->ssl_ca_cert = mg_mk_str(wscfg->ssl_ca_cert);
   chcfg->ssl_server_name = mg_mk_str(wscfg->ssl_server_name);
 #endif
   chcfg->reconnect_interval_min = wscfg->reconnect_interval_min;

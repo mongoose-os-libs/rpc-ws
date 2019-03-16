@@ -247,9 +247,10 @@ static void mg_rpc_channel_ws_out_ch_connect(struct mg_rpc_channel *ch) {
   memset(&opts, 0, sizeof(opts));
   struct mg_rpc_channel_ws_out_cfg *cfg = chd->cfg;
 #if MG_ENABLE_SSL
+  opts.ssl_cert = cfg->ssl_cert.p;
+  opts.ssl_key = cfg->ssl_key.p;
+  opts.ssl_ca_cert = cfg->ssl_ca_cert.p;
   opts.ssl_server_name = cfg->ssl_server_name.p;
-  opts.ssl_ca_cert = cfg->ssl_ca_file.p;
-  opts.ssl_cert = cfg->ssl_client_cert_file.p;
 #endif
   LOG(LL_INFO, ("%p Connecting to %s, SSL? %d", ch, cfg->server_address.p,
 #if MG_ENABLE_SSL
@@ -275,7 +276,7 @@ static const char *mg_rpc_channel_ws_out_get_type(struct mg_rpc_channel *ch) {
 #if MG_ENABLE_SSL
   struct mg_rpc_channel_ws_out_data *chd =
       (struct mg_rpc_channel_ws_out_data *) ch->channel_data;
-  return (chd->cfg->ssl_ca_file.len > 0 ? "WSS_out" : "WS_out");
+  return (chd->cfg->ssl_ca_cert.len > 0 ? "WSS_out" : "WS_out");
 #else
   (void) ch;
   return "WS_out";
@@ -372,8 +373,9 @@ static struct mg_rpc_channel_ws_out_cfg *mg_rpc_channel_ws_out_copy_cfg(
   out->server_address = mg_strdup_nul(in->server_address);
   out->handshake_headers = mg_strdup_nul(in->handshake_headers);
 #if MG_ENABLE_SSL
-  out->ssl_ca_file = mg_strdup_nul(in->ssl_ca_file);
-  out->ssl_client_cert_file = mg_strdup_nul(in->ssl_client_cert_file);
+  out->ssl_cert = mg_strdup_nul(in->ssl_cert);
+  out->ssl_key = mg_strdup_nul(in->ssl_key);
+  out->ssl_ca_cert = mg_strdup_nul(in->ssl_ca_cert);
   out->ssl_server_name = mg_strdup_nul(in->ssl_server_name);
 #endif
   out->reconnect_interval_min = in->reconnect_interval_min;
@@ -384,12 +386,13 @@ static struct mg_rpc_channel_ws_out_cfg *mg_rpc_channel_ws_out_copy_cfg(
 
 static void mg_rpc_channel_ws_out_destroy_cfg(
     struct mg_rpc_channel_ws_out_cfg *cfg) {
-  free((void *) cfg->server_address.p);
-  free((void *) cfg->handshake_headers.p);
+  mg_strfree(&cfg->server_address);
+  mg_strfree(&cfg->handshake_headers);
 #if MG_ENABLE_SSL
-  free((void *) cfg->ssl_ca_file.p);
-  free((void *) cfg->ssl_client_cert_file.p);
-  free((void *) cfg->ssl_server_name.p);
+  mg_strfree(&cfg->ssl_cert);
+  mg_strfree(&cfg->ssl_key);
+  mg_strfree(&cfg->ssl_ca_cert);
+  mg_strfree(&cfg->ssl_server_name);
 #endif
   memset(cfg, 0, sizeof(*cfg));
   free(cfg);
