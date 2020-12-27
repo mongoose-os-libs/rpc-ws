@@ -220,8 +220,10 @@ static void mg_rpc_ws_out_handler(struct mg_connection *nc, int ev,
       break;
     }
     case MG_EV_TIMER: {
-      LOG(LL_INFO, ("%p CLOSING (idle)", ch));
-      mg_rpc_channel_ws_out_ch_close(ch);
+      if (!ch->is_persistent(ch)) {
+        LOG(LL_INFO, ("%p CLOSING (idle)", ch));
+        mg_rpc_channel_ws_out_ch_close(ch);
+      }
       break;
     }
     case MG_EV_CLOSE: {

@@ -83,6 +83,7 @@ static struct mg_rpc_channel *mgos_rpc_channel_ws_out_factory(
 static void mgos_rpc_channel_ws_out_cfg_from_sys(
     const struct mgos_config *cfg, struct mg_rpc_channel_ws_out_cfg *chcfg) {
   const struct mgos_config_rpc_ws *wscfg = &cfg->rpc.ws;
+  memset(chcfg, 0, sizeof(*chcfg));
   chcfg->server_address = mg_mk_str(wscfg->server_address);
 #if MG_ENABLE_SSL
   chcfg->ssl_cert = mg_mk_str(wscfg->ssl_cert);
