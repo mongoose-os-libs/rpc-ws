@@ -17,6 +17,7 @@
 
 #include "mg_rpc_channel_ws.h"
 
+#include "mg_rpc.h"
 #include "mg_rpc_channel.h"
 #include "mg_rpc_channel_tcp_common.h"
 
@@ -30,6 +31,7 @@
 
 struct mg_rpc_channel_ws_data {
   struct mg_connection *nc;
+  struct mg_str username;
   unsigned int is_open : 1;
   unsigned int sending : 1;
   unsigned int free_data : 1;
@@ -116,6 +118,7 @@ static void mg_rpc_channel_ws_ch_close(struct mg_rpc_channel *ch) {
 static void mg_rpc_channel_ws_ch_destroy(struct mg_rpc_channel *ch) {
   struct mg_rpc_channel_ws_data *chd =
       (struct mg_rpc_channel_ws_data *) ch->channel_data;
+  mg_strfree(&chd->username);
   if (chd->free_data) {
     free(chd);
     ch->channel_data = NULL;
@@ -131,12 +134,13 @@ static const char *mg_rpc_channel_ws_in_get_type(struct mg_rpc_channel *ch) {
 static bool mg_rpc_channel_ws_in_get_authn_info(
     struct mg_rpc_channel *ch, const char *auth_domain, const char *auth_file,
     struct mg_rpc_authn_info *authn) {
-  (void) ch;
+  struct mg_rpc_channel_ws_data *chd =
+      (struct mg_rpc_channel_ws_data *) ch->channel_data;
+  if (chd->username.len == 0) return false;
+  authn->username = mg_strdup(chd->username);
   (void) auth_domain;
   (void) auth_file;
-  (void) authn;
-
-  return false;
+  return true;
 }
 
 static char *mg_rpc_channel_ws_get_info(struct mg_rpc_channel *ch) {
@@ -145,7 +149,8 @@ static char *mg_rpc_channel_ws_get_info(struct mg_rpc_channel *ch) {
   return (chd->nc != NULL ? mg_rpc_channel_tcp_get_info(chd->nc) : NULL);
 }
 
-struct mg_rpc_channel *mg_rpc_channel_ws_in(struct mg_connection *nc) {
+struct mg_rpc_channel *mg_rpc_channel_ws_in(struct mg_connection *nc,
+                                            struct mg_str username) {
   struct mg_rpc_channel *ch = (struct mg_rpc_channel *) calloc(1, sizeof(*ch));
   ch->ch_connect = mg_rpc_channel_ws_in_ch_connect;
   ch->send_frame = mg_rpc_channel_ws_send_frame;
@@ -158,6 +163,7 @@ struct mg_rpc_channel *mg_rpc_channel_ws_in(struct mg_connection *nc) {
   ch->get_info = mg_rpc_channel_ws_get_info;
   struct mg_rpc_channel_ws_data *chd =
       (struct mg_rpc_channel_ws_data *) calloc(1, sizeof(*chd));
+  chd->username = mg_strdup(username);
   chd->free_data = true;
   chd->is_open = true;
   ch->channel_data = chd;

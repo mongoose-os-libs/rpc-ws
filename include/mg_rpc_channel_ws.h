@@ -26,7 +26,8 @@
 extern "C" {
 #endif
 
-struct mg_rpc_channel *mg_rpc_channel_ws_in(struct mg_connection *nc);
+struct mg_rpc_channel *mg_rpc_channel_ws_in(struct mg_connection *nc,
+                                            struct mg_str username);
 
 struct mg_rpc_channel_ws_out_cfg {
   struct mg_str server_address;
